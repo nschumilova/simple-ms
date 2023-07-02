@@ -8,13 +8,13 @@ RUN go mod download
 
 COPY . .
 
-RUN go build -o simple-ws ./cmd/main.go
+RUN go build -o simple-ms ./cmd/main.go
 
 
 FROM alpine:3.17 as app
 
-COPY --from=build /build/simple-ws /app/simple-ws
+COPY --from=build /build/simple-ms /app/simple-ms
 
 EXPOSE 8000
 
-ENTRYPOINT [ "/app/simple-ws" ,"-port=8000"]
+ENTRYPOINT [ "/app/simple-ms" ,"-port=8000"]
