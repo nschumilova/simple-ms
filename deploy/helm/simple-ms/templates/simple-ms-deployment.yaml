@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: {{ .Release.Namespace }}
+  name: {{ .Release.Name }}-deployment
+  labels:
+  {{- include "app.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.simpleMs.replicaCount }}
+  selector:
+    matchLabels:
+    {{- include "app.labels" . | nindent 6 }}
+  template:
+    metadata:
+      namespace: {{ .Release.Namespace }}
+      labels:
+      {{- include "app.labels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: {{ .Chart.Name }}-app
+          image: {{ .Values.image.simpleMs.repository }}:{{ .Values.image.simpleMs.tag }}
+          imagePullPolicy: {{ .Values.image.simpleMs.pullPolicy }}
+          ports:
+            - containerPort: {{ include "app.pod.exposedPort" . }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.simpleMs.livenessCheck.urlPrefix }}
+              port: {{ include "app.pod.exposedPort" . }}
+            periodSeconds: {{ .Values.simpleMs.livenessCheck.periodSeconds }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.simpleMs.readynessCheck.urlPrefix }}
+              port: {{ include "app.pod.exposedPort" . }}
+            initialDelaySeconds: {{ .Values.simpleMs.readynessCheck.initialDelaySeconds }}
+            periodSeconds: {{ .Values.simpleMs.readynessCheck.periodSeconds }}
+          resources:
+            limits:
+              memory: {{ .Values.simpleMs.resources.memory }}
+          volumeMounts:
+            - name: config
+              mountPath: "/app/configs/application.yaml"
+              subPath: "application.yaml"
+              readOnly: true            
+            - name: secret
+              mountPath: "/app/configs/secrets.yaml"
+              subPath: "secrets.yaml"
+              readOnly: true
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "app.config.name" . }}
+        - name: secret
+          secret:
+            secretName: {{ include "app.secret.name" . }}
+            defaultMode: 0400
+      restartPolicy: Always

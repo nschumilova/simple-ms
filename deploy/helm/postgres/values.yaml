@@ -1,0 +1,9 @@
+nameOverride: simplems
+auth:
+  postgresPassword: adminpwd
+  database: simplems
+  username: msuser
+  password: userpwd
+primary:
+  persistence:
+    size: 500Mi

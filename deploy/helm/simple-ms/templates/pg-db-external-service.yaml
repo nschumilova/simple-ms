@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: {{ .Release.Namespace }}
+  name: {{ include "pg.database.service.name" . }}
+  labels:
+  {{- include "pgSchema.labels" . | nindent 4 }}
+spec:
+  type: ExternalName
+  externalName: {{ .Values.database.postgres.serviceName }}.{{ .Values.database.postgres.namespace }}.svc.cluster.local

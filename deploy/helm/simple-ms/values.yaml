@@ -1,0 +1,43 @@
+image:
+  simpleMs:
+    repository: nshumilova/simple-ms
+    pullPolicy: IfNotPresent
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: "1.1.0"
+  pgSchema:
+    repository: nshumilova/simple-ms-pgdb-schema
+    pullPolicy: IfNotPresent
+    tag: "1.0.0"
+
+database:
+  postgres:
+    namespace: nsch-db
+    serviceName: postgresql-simplems
+    databaseName: simplems
+    port: 5432
+    username: msuser
+    password: userpwd
+
+
+simpleMs:
+  port: 8000
+  replicaCount: 2
+  ingress:
+    host: arch.homework
+    urlPrefix: /otusapp/nshumilova
+  resources:
+    memory: 100Mi
+  livenessCheck:
+    urlPrefix: /health/
+    periodSeconds: 10
+  readynessCheck:
+    urlPrefix: /health/
+    initialDelaySeconds: 5
+    periodSeconds: 10
+  connectionPool:
+    postgres:
+      maxIdleConnections: 2
+      maxOpenConnections: 5
+      connectionMaxLifetime: "1h"
+
+
