@@ -17,4 +17,4 @@ COPY --from=build /build/simple-ms /app/simple-ms
 
 EXPOSE 8000
 
-ENTRYPOINT [ "/app/simple-ms" ,"-port=8000"]
+ENTRYPOINT [ "/app/simple-ms" ,"--port=8000", "--configs=/app/configs/"]

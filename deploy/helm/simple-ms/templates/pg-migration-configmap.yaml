@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: {{ .Release.Namespace }}
+  name: {{ include "pg.migrator.config.name" . }}
+  labels:
+  {{- include "pgSchema.labels" . | nindent 4 }}
+data:
+  database_name: {{ .Values.database.postgres.databaseName | quote }}
+  port: {{ .Values.database.postgres.port | quote }}

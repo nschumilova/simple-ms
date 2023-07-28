@@ -7,38 +7,686 @@
 	},
 	"item": [
 		{
-			"name": "healthcheck",
+			"name": "user",
+			"item": [
+				{
+					"name": "find",
+					"item": [
+						{
+							"name": "non-existent user",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 404\", function () {",
+											"    pm.response.to.have.status(404);",
+											"});",
+											"",
+											"pm.test(\"Error description is 'user not found'\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.code).to.eql(404);",
+											"    pm.expect(jsonData.message).to.eql(\"User not found\");",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/user/{{nonExistentUserId}}",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"user",
+										"{{nonExistentUserId}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "existent user",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"var request = pm.createUserRequest(pm.rndUsername());",
+											"pm.sendRequest(request, function (err, res) {",
+											"    if (err) {",
+											"        console.log(err);",
+											"    } else {",
+											"        var user = res.json();",
+											"        var_id = pm.request.url.variables.indexOf('existentUserIdToGet');",
+											"        pm.request.url.variables.idx(var_id).value = `${user.id}`;",
+											"        //pm.variables.set(\"existentUserIdToGet\", user.id);",
+											"        pm.variables.set(\"existentUserToGet\", user);",
+											"    }",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Body contains existent user\", function () {",
+											"    pm.expect(pm.response.json()).to.eql(pm.variables.get(\"existentUserToGet\"));",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/user/:existentUserIdToGet",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"user",
+										":existentUserIdToGet"
+									],
+									"variable": [
+										{
+											"key": "existentUserIdToGet",
+											"value": null
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "create",
+					"item": [
+						{
+							"name": "new user",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"pm.variables.set(\"newUsernameToCreate\", pm.rndUsername());"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Body contains created user\", function () {",
+											"    pm.expect(pm.response.json().username).to.eq(pm.variables.get(\"newUsernameToCreate\"));",
+											"    pm.expect(pm.response.json().firstName).to.eq(\"New user first name\");",
+											"    pm.expect(pm.response.json().lastName).to.eq(\"New user last name\");",
+											"    pm.expect(pm.response.json().email).to.eq(\"new_user@email.com\");",
+											"    pm.expect(pm.response.json().phone).to.eq(\"+0987654321\");",
+											"    pm.expect(pm.response.json().id).to.gt(0);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"username\": \"{{newUsernameToCreate}}\",\n  \"firstName\": \"New user first name\",\n  \"lastName\": \"New user last name\",\n  \"email\": \"new_user@email.com\",\n  \"phone\": \"+0987654321\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/user",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"user"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "user with existing username",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"var uname = pm.rndUsername();",
+											"pm.variables.set(\"newUsernameToCreateWithExistingUsername\", uname);",
+											"var request = pm.createUserRequest(uname);",
+											"pm.sendRequest(request, function (err, _) {",
+											"    if (err) {",
+											"        console.log(err);",
+											"    }",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 409\", function () {",
+											"    pm.response.to.have.status(409);",
+											"});",
+											"",
+											"pm.test(\"Error description with existing user\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.code).to.eql(409);",
+											"    pm.expect(jsonData.message).to.eql(\"User already exists\");",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"username\": \"{{newUsernameToCreateWithExistingUsername}}\",\n  \"firstName\": \"New user first name\",\n  \"lastName\": \"New user last name\",\n  \"email\": \"new_user@email.com\",\n  \"phone\": \"+0987654321\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/user",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"user"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "update",
+					"item": [
+						{
+							"name": "non-existent user",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 404\", function () {",
+											"    pm.response.to.have.status(404);",
+											"});",
+											"",
+											"pm.test(\"Error description is 'user not found'\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.code).to.eql(404);",
+											"    pm.expect(jsonData.message).to.eql(\"User not found\");",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"username\": \"someuser\",\n  \"firstName\": \"Some user first name\",\n  \"lastName\": \"Some user last name\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/user/{{nonExistentUserId}}",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"user",
+										"{{nonExistentUserId}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "user with existing username",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"var existingUname = pm.rndUsername();",
+											"pm.variables.set(\"existingUsernameToUpdate\", existingUname);",
+											"var existingUserRequest = pm.createUserRequest(existingUname);",
+											"var userToUpdateRequest = pm.createUserRequest(pm.rndUsername());",
+											"pm.sendRequest(existingUserRequest, function (err, _) {",
+											"    if (err) {",
+											"        console.log(err);",
+											"    }",
+											"});",
+											"pm.sendRequest(userToUpdateRequest, function (err, res) {",
+											"    if (err) {",
+											"        console.log(err);",
+											"    } else {",
+											"        var_id = pm.request.url.variables.indexOf('userIdToUpdateWithExistingUsername');",
+											"        pm.request.url.variables.idx(var_id).value = `${res.json().id}`;",
+											"    }",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 409\", function () {",
+											"    pm.response.to.have.status(409);",
+											"});",
+											"",
+											"pm.test(\"Error description with existing user\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.code).to.eql(409);",
+											"    pm.expect(jsonData.message).to.eql(\"User with new username already exists\");",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"username\": \"{{existingUsernameToUpdate}}\",\n  \"firstName\": \"New user first name\",\n  \"lastName\": \"New user last name\",\n  \"email\": \"new_user@email.com\",\n  \"phone\": \"+0987654321\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/user/:userIdToUpdateWithExistingUsername",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"user",
+										":userIdToUpdateWithExistingUsername"
+									],
+									"variable": [
+										{
+											"key": "userIdToUpdateWithExistingUsername",
+											"value": null
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "user with unique values",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"pm.variables.set(\"uniqueUsernameToUpdate\", pm.rndUsername());",
+											"var userToUpdateRequest = pm.createUserRequest(pm.rndUsername());",
+											"pm.sendRequest(userToUpdateRequest, function (err, res) {",
+											"    if (err) {",
+											"        console.log(err);",
+											"    } else {",
+											"        var_id = pm.request.url.variables.indexOf('userIdToUpdateWithUniqueValues');",
+											"        pm.request.url.variables.idx(var_id).value = `${res.json().id}`;",
+											"        pm.variables.set(\"userIdToUpdateWithUniqueValues\", res.json().id)",
+											"    }",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Body is empty\", function () {",
+											"    pm.response.to.not.be.withBody;",
+											"});",
+											"",
+											"var req = {",
+											"    url: `${pm.baseUrl()}/user/${pm.variables.get(\"userIdToUpdateWithUniqueValues\")}`,",
+											"    method: 'GET'",
+											"};",
+											"pm.sendRequest(req, function (err, res) {",
+											"    pm.test(\"User was updated with new values\", function () {",
+											"        if (err) {",
+											"            console.log(err);",
+											"            pm.expect.fail(\"failed to execute test\")",
+											"        }",
+											"        else {",
+											"            var uname = pm.variables.get(\"uniqueUsernameToUpdate\")",
+											"            pm.expect(res.json().username).to.eq(uname);",
+											"            pm.expect(res.json().firstName).to.eq(\"name\" + uname);",
+											"            pm.expect(res.json().lastName).to.eq(\"lastName\" + uname);",
+											"            pm.expect(res.json().email).to.eq(uname + \"@email.com\");",
+											"            pm.expect(res.json().phone).to.eq(\"567\");",
+											"            pm.expect(res.json().id).to.eq(pm.variables.get(\"userIdToUpdateWithUniqueValues\"));",
+											"        }",
+											"    });",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"username\": \"{{uniqueUsernameToUpdate}}\",\n  \"firstName\": \"name{{uniqueUsernameToUpdate}}\",\n  \"lastName\": \"lastName{{uniqueUsernameToUpdate}}\",\n  \"email\": \"{{uniqueUsernameToUpdate}}@email.com\",\n  \"phone\": \"567\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/user/:userIdToUpdateWithUniqueValues",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"user",
+										":userIdToUpdateWithUniqueValues"
+									],
+									"variable": [
+										{
+											"key": "userIdToUpdateWithUniqueValues",
+											"value": null
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "delete",
+					"item": [
+						{
+							"name": "non-existent user",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 404\", function () {",
+											"    pm.response.to.have.status(404);",
+											"});",
+											"",
+											"pm.test(\"Error description is 'user not found'\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.code).to.eql(404);",
+											"    pm.expect(jsonData.message).to.eql(\"User not found\");",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/user/{{nonExistentUserId}}",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"user",
+										"{{nonExistentUserId}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "existent user",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"var request = pm.createUserRequest(pm.rndUsername());",
+											"pm.sendRequest(request, function (err, res) {",
+											"    if (err) {",
+											"        console.log(err);",
+											"    } else {",
+											"        var user = res.json();",
+											"        var_id = pm.request.url.variables.indexOf('existentUserIdToDelete');",
+											"        pm.request.url.variables.idx(var_id).value = `${user.id}`;",
+											"        pm.variables.set(\"existentUserIdToDelete\", user.id);",
+											"    }",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 204\", function () {",
+											"    pm.response.to.have.status(204);",
+											"});",
+											"",
+											"pm.test(\"Body is empty\", function () {",
+											"    pm.response.to.not.be.withBody;",
+											"});",
+											"",
+											"",
+											"var req = {",
+											"    url: `${pm.baseUrl()}/user/${pm.variables.get(\"existentUserIdToDelete\")}`,",
+											"    method: 'GET'",
+											"};",
+											"pm.sendRequest(req, function (err, res) {",
+											"    pm.test(\"Deleted user does not exist\", function () {",
+											"        if (err) {",
+											"            console.log(err);",
+											"            pm.expect.fail(\"failed to execute test\")",
+											"        }",
+											"        else {",
+											"            pm.expect(res.code).to.eq(404);",
+											"        }",
+											"    });",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/user/:existentUserIdToDelete",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"user",
+										":existentUserIdToDelete"
+									],
+									"variable": [
+										{
+											"key": "existentUserIdToDelete",
+											"value": null
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					],
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									""
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									""
+								]
+							}
+						}
+					]
+				}
+			],
 			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"Object.prototype.rndUsername = function () {",
+							"    var index = pm.environment.get(\"testIndex\");",
+							"    if (!index) {",
+							"        index = 1;",
+							"    } else {",
+							"        index = index + 1;",
+							"    }",
+							"    pm.environment.set(\"testIndex\", index);",
+							"    return `${Date.now()}` + index;",
+							"};",
+							"Object.prototype.baseUrl = function(){",
+							"    var baseUrl = pm.collectionVariables.get(\"baseUrl\");",
+							"    if (!baseUrl){",
+							"        baseUrl = pm.environment.get(\"baseUrl\");",
+							"    }",
+							"    return baseUrl;",
+							"};",
+							"Object.prototype.createUserRequest = function (name) {",
+							"    return {",
+							"        url: `${pm.baseUrl()}/user`,",
+							"        method: 'POST',",
+							"        header: { 'content-type': 'application/json' },",
+							"        body: {",
+							"            mode: 'raw',",
+							"            raw: JSON.stringify({",
+							"                username: `${name}`,",
+							"                firstName: `name${name}`,",
+							"                lastName: `lastName${name}`,",
+							"                email: `${name}@email.com`,",
+							"                phone: \"+0987654321\"",
+							"            })",
+							"        }",
+							"    }",
+							"};",
+							""
+						]
+					}
+				},
 				{
 					"listen": "test",
 					"script": {
+						"type": "text/javascript",
 						"exec": [
-							"pm.test(\"Status code is 200\", ()=>{",
-							"    pm.response.to.have.status(200);",
-							"})",
-							"",
-							"pm.test(\"Status value is OK\",()=>{",
-							"    pm.expect(pm.response.json().status).to.eql(\"OK\")",
-							"})"
-						],
-						"type": "text/javascript"
+							""
+						]
 					}
 				}
-			],
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "{{baseUrl}}/health",
-					"host": [
-						"{{baseUrl}}"
+			]
+		},
+		{
+			"name": "healthcheck",
+			"item": [
+				{
+					"name": "healthcheck",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", ()=>{",
+									"    pm.response.to.have.status(200);",
+									"})",
+									"",
+									"pm.test(\"Status value is OK\",()=>{",
+									"    pm.expect(pm.response.json().status).to.eql(\"OK\")",
+									"})"
+								],
+								"type": "text/javascript"
+							}
+						}
 					],
-					"path": [
-						"health"
-					]
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/health",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"health"
+							]
+						}
+					},
+					"response": []
 				}
-			},
-			"response": []
+			]
 		}
 	],
 	"event": [
@@ -65,6 +713,11 @@
 		{
 			"key": "baseUrl",
 			"value": "arch.homework/otusapp/nshumilova",
+			"type": "string"
+		},
+		{
+			"key": "nonExistentUserId",
+			"value": "999999",
 			"type": "string"
 		}
 	]

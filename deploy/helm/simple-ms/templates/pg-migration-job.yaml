@@ -1,0 +1,47 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  namespace: {{ .Release.Namespace }}
+  name: {{ .Release.Name }}-postgres-migator
+  labels:
+  {{- include "pgSchema.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": post-install, post-upgrade
+    "helm.sh/hook-weight": "-1"
+    "helm.sh/hook-delete-policy": hook-succeded
+spec:
+  ttlSecondsAfterFinished: 10
+  backoffLimit: 3
+  activeDeadlineSeconds: 60
+  template:
+    spec:
+      containers:
+      - name: {{ .Chart.Name }}-migrator
+        image: {{ .Values.image.pgSchema.repository }}:{{ .Values.image.pgSchema.tag }}
+        imagePullPolicy: {{ .Values.image.pgSchema.pullPolicy }}
+        env:
+        - name: DB_HOST
+          value: {{ include "pg.database.service.name" . }}
+        - name: DB_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "pg.migrator.config.name" . }}
+              key: port
+        - name: DB_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "pg.migrator.config.name" . }}
+              key: database_name
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "pg.migrator.secret.name" . }}
+              key: username
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "pg.migrator.secret.name" . }}
+              key: password
+        - name: COMMAND
+          value: "up"
+      restartPolicy: Never

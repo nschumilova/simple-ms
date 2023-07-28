@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: {{ .Release.Namespace }}
+  name: {{ include "app.config.name" . }}
+  labels:
+  {{- include "app.labels" . | nindent 4 }}
+data:
+  application.yaml: |-
+    database:
+      postgres:
+        host: {{ include "pg.database.service.name" . }}
+        port: {{ .Values.database.postgres.port | quote }}
+        db_name: simplems
+        connection_pool:
+          max_idle_connections: {{ .Values.simpleMs.connectionPool.postgres.maxIdleConnections }}
+          max_open_connections: {{ .Values.simpleMs.connectionPool.postgres.maxOpenConnections }}
+          connection_max_lifetime: {{ .Values.simpleMs.connectionPool.postgres.connectionMaxLifetime | quote }}
